@@ -4,6 +4,7 @@ import java.awt.*;
 import java.awt.event.*;
 
 import java.util.*;
+import java.util.Random;
 
 import javax.sound.midi.*;
 
@@ -26,6 +27,8 @@ public class BanginDonkMasheen implements ItemListener
 
 	Sequencer sequencer = null;
 	Sequence sequence = null;
+
+	public static Random randy = new Random();
 
 	//	tracks for instrument changes
 	ArrayList<Track> instrumentChangeTracks = new ArrayList<Track>();
@@ -119,24 +122,32 @@ public class BanginDonkMasheen implements ItemListener
 	JButton buttonReset;
 	JButton buttonIncreaseTempo;
 	JButton buttonDecreaseTempo;
+	JButton buttonRandomizeInstruments;
+	JButton buttonRandomizeChannelNotes;
+
+	//	name a donk?
+	//	save a donk?
+	//	load a donk?
+
+	//	random donks? //	randomizes the checkmarks?
 
 	//	initial labels of each channel
-	static final String[] defaultChannelLabels = {	"Donk1",
-													"Donk2",
-													"Donk3",
-													"Donk4",
-													"Donk5",
-													"Donk6",
-													"Donk7",
-													"Donk8",
-													"Donk9",
-													"Donk10",
-													"Donk11",
-													"Donk12",
-													"Donk13",
-													"Donk14",
-													"Donk15",
-													"Donk16",	};
+	static final String[] defaultChannelLabels = {	"Donk",
+													"Dink",
+													"Dyenk",
+													"Denk",
+													"Donkey",
+													"Dunk",
+													"Dank",
+													"Doynk",
+													"Doonk",
+													"D0nK",
+													"Donke",
+													"Daunk",
+													"Dinkle",
+													"B'Donk",
+													"Donko",
+													"Duck",	};
 
 	//	labels of each channel
 	ArrayList<Label> labelOfChannel;
@@ -160,6 +171,10 @@ public class BanginDonkMasheen implements ItemListener
 		banginDonkMasheen.initMidi();
 	}
 
+	public static int randomInstrumentOrNote()
+	{
+		return randy.nextInt( 128 );
+	}
 
 	//	-	-	-	-	-	GUI FUNCTIONS	-	-	-	-	-	//
 	//	init the GUI
@@ -196,6 +211,13 @@ public class BanginDonkMasheen implements ItemListener
 
 		buttonDecreaseTempo = new JButton( "Decrease Tempo" );
 		buttonBox.add( buttonDecreaseTempo );
+
+		buttonRandomizeInstruments = new JButton( "Randomize Instruments" );
+		buttonBox.add( buttonRandomizeInstruments );
+
+		buttonRandomizeChannelNotes = new JButton( "Randomize Tones" );
+		buttonBox.add( buttonRandomizeChannelNotes );
+
 
 		//	left box
 		labelBox = new Box( BoxLayout.Y_AXIS );
@@ -298,6 +320,12 @@ public class BanginDonkMasheen implements ItemListener
 
 		//	decrease tempo button
 		buttonDecreaseTempo.addActionListener( new DecreaseTempoButtonListener() );
+
+		//	randomize instruments button
+		buttonRandomizeInstruments.addActionListener( new RandomizeInstrumentsButtonListener() );
+
+		//	randomize channel notes button
+		buttonRandomizeChannelNotes.addActionListener( new RandomizeChannelNotesButtonListener() );
 
 		//	every single checkbox
 		addListenerToAllCheckboxes();
@@ -431,6 +459,30 @@ public class BanginDonkMasheen implements ItemListener
 				ex.printStackTrace();
 			}
 
+	}
+
+	//	randomize channel instruments
+	public void randomizeInstruments()
+	{
+		instrumentOfChannel = new ArrayList<Integer>();
+		for( int i = 0; i < NUM_CHANNELS; i++ )
+		{
+			instrumentOfChannel.add( randomInstrumentOrNote() );
+		}
+
+		reCreateChannelTracksForCurrentCheckboxes();
+	}
+
+	//	randomize channel notes
+	public void randomizeNotes()
+	{
+		noteOfChannel = new ArrayList<Integer>();
+		for( int i = 0; i < NUM_CHANNELS; i++ )
+		{
+			noteOfChannel.add( randomInstrumentOrNote() );
+		}
+
+		reCreateChannelTracksForCurrentCheckboxes();
 	}
 
 	//	go through every checkbox and remake every note
@@ -612,6 +664,12 @@ public class BanginDonkMasheen implements ItemListener
 		public void actionPerformed( ActionEvent ev )
 		{
 			System.out.println( "reset button pressed" );
+			long time = 0;
+			if( isPlaying == true )
+			{
+				sequencer.stop();
+				isPlaying = false;
+			}
 			//	set all checkboxes to unchecked and empty the sequence
 			clearAllCheckboxesAndClearTheSequence();
 		}
@@ -637,15 +695,68 @@ public class BanginDonkMasheen implements ItemListener
 		}
 	}
 
+	public class RandomizeInstrumentsButtonListener implements ActionListener
+	{
+		public void actionPerformed( ActionEvent ev )
+		{
+			System.out.println( "buttonRandomizeInstruments pressed" );
+
+			long time = 0;
+			boolean wasPlaying = false;
+			if( isPlaying == true )
+			{
+				wasPlaying = true;
+				sequencer.stop();
+				time  = sequencer.getTickPosition();
+				isPlaying = false;
+
+			}
+			randomizeInstruments();
+			if( wasPlaying )
+			{
+				sequencer.setTickPosition( time );
+				startSequencer();
+			}
+
+		}
+	}
+
+	public class RandomizeChannelNotesButtonListener implements ActionListener
+	{
+		public void actionPerformed( ActionEvent ev )
+		{
+			System.out.println( "buttonRandomizeChannelNotes pressed" );
+			long time = 0;
+			boolean wasPlaying = false;
+			if( isPlaying == true )
+			{
+				wasPlaying = true;
+				sequencer.stop();
+				time  = sequencer.getTickPosition();
+				isPlaying = false;
+
+			}
+			randomizeNotes();
+			if( wasPlaying )
+			{
+				sequencer.setTickPosition( time );
+				startSequencer();
+			}
+		}
+	}
 
 	public void itemStateChanged( ItemEvent ev )
 	{
+		long time = 0;
 		boolean wasPlaying = false;
-		if( isPlaying )
-		{ 
-			wasPlaying  = true;
-		}
+		if( isPlaying == true )
+		{
+			wasPlaying = true;
+			sequencer.stop();
+			time  = sequencer.getTickPosition();
+			isPlaying = false;
 
+		}
 
 		int channel = 0;
 		int beatTime = 0;
@@ -669,6 +780,7 @@ public class BanginDonkMasheen implements ItemListener
 
 		if( wasPlaying )
 		{
+			sequencer.setTickPosition( time );
 			startSequencer();
 		}
 
